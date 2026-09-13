@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>교육 수료 현황</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231c5cab'/><text x='16' y='23' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>교</text></svg>">
+</head>
+<body>
+
+<main class="wrap">
+  <h1 class="page-title">교육 수료 현황</h1>
+  <p class="page-desc">실국·부서·직급별 교육 이수 현황을 한눈에 확인합니다.</p>
+
+  <div class="filters">
+    <label class="field">
+      <span>교육 과정</span>
+      <select id="fMaterial"><option value="__ALL__">전체 과정(모두 수료 기준)</option></select>
+    </label>
+    <label class="field">
+      <span>실국</span>
+      <select id="fBureau"><option value="">전체</option></select>
+    </label>
+    <div class="spacer"></div>
+    <button class="btn btn--sm" id="btnCsv">현황 내려받기 (CSV)</button>
+  </div>
+
+  <div id="kpis" class="grid grid--kpi"></div>
+
+  <div class="grid grid--2" style="margin-top:16px">
+    <section class="card">
+      <h2 class="card__title">실국별 수료율</h2>
+      <p class="card__desc">막대 길이는 해당 실국의 수료율입니다.</p>
+      <div id="chartBureau"></div>
+    </section>
+    <section class="card">
+      <h2 class="card__title">직급별 수료율</h2>
+      <p class="card__desc">직급별 대상 인원 대비 수료 인원 비율입니다.</p>
+      <div id="chartRank"></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">부서별 상세</h2>
+        <p class="card__desc">수료율이 낮은 부서부터 표시됩니다.</p>
+      </div>
+      <div class="card__head-actions">
+        <label class="sr-only" for="sortDept">정렬</label>
+        <select id="sortDept" style="width:auto">
+          <option value="rate">수료율 낮은 순</option>
+          <option value="rateDesc">수료율 높은 순</option>
+          <option value="name">실국·부서 이름순</option>
+          <option value="total">대상 인원 많은 순</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-scroll"><div id="tblDept"></div></div>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <h2 class="card__title">과정별 수료 현황</h2>
+    <p class="card__desc">등록된 교육자료별 이수 인원입니다.</p>
+    <div id="chartMaterial"></div>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">미수료자 명단</h2>
+        <p class="card__desc" id="notDoneDesc"></p>
+      </div>
+      <div class="card__head-actions">
+        <input type="text" id="searchName" placeholder="이름·부서 검색" style="width:200px">
+      </div>
+    </div>
+    <div class="table-scroll"><div id="tblNotDone"></div></div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/common.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
