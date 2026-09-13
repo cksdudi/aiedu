@@ -10,43 +10,6 @@
 
   var state = { members: [], materials: [], completions: [], me: UI.Me.get(), view: null, loaded: false, viewerFor: null };
 
-  /* ── 이메일 링크 인증 완료 처리 (페이지 로드 시 자동 실행) ── */
-  (function handleEmailLinkSignIn() {
-    if (!window.firebase || !firebase.auth) return;
-    var auth = firebase.auth();
-    if (!auth.isSignInWithEmailLink(window.location.href)) return;
-
-    var email = window.localStorage.getItem('emailForSignIn');
-    if (!email) {
-      email = window.prompt('인증을 완료하려면 이메일 주소를 입력해 주세요.');
-    }
-    if (!email) return;
-
-    auth.signInWithEmailLink(email, window.location.href)
-      .then(function (result) {
-        window.localStorage.removeItem('emailForSignIn');
-        var pendingStr = window.localStorage.getItem('pendingMe');
-        if (pendingStr) {
-          try {
-            var pending = JSON.parse(pendingStr);
-            state.me = pending;
-            UI.Me.set(state.me);
-            window.localStorage.removeItem('pendingMe');
-            UI.toast(pending.name + ' 님, 이메일 인증이 완료되었습니다!');
-          } catch (e) { console.error('pendingMe parse error', e); }
-        }
-        // URL에서 인증 파라미터 제거 (깔끔한 URL 유지)
-        if (window.history && window.history.replaceState) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-        render();
-      })
-      .catch(function (error) {
-        console.error('이메일 링크 인증 실패:', error);
-        UI.toast('이메일 인증에 실패했습니다: ' + error.message, true);
-      });
-  })();
-
   Store.subscribe('members', function (d) { state.members = d; verifyMe(); render(); });
   Store.subscribe('materials', function (d) { state.materials = d; render(); });
   Store.subscribe('completions', function (d) { state.completions = d; render(); });
@@ -103,14 +66,11 @@
       '<label class="field"><span>부서</span><select id="selD" disabled><option value="">실국을 먼저 선택</option></select></label>' +
       '</div>' +
       '<label class="field"><span>성명</span><select id="selN" disabled><option value="">부서를 먼저 선택</option></select></label>' +
-      '<label class="field"><span>이메일 주소</span><input type="email" id="inputEmail" placeholder="인증 메일을 받을 주소" disabled></label>' +
-      '<button class="btn btn--primary" id="btnGo" disabled>인증 메일 발송</button>' +
-      '<div id="authMsg" style="margin-top:10px;font-size:14px;color:var(--primary);line-height:1.5;"></div>' +
+      '<button class="btn btn--primary" id="btnGo" disabled>본인 확인 완료</button>' +
       '</section>';
 
     var selB = document.getElementById('selB'), selD = document.getElementById('selD'),
-      selN = document.getElementById('selN'), btn = document.getElementById('btnGo'),
-      inputEmail = document.getElementById('inputEmail');
+      selN = document.getElementById('selN'), btn = document.getElementById('btnGo');
 
     // Fill initial bureaus
     selB.innerHTML = '<option value="$$none$$">선택하세요</option>' + 
@@ -126,7 +86,7 @@
         selD.disabled = false;
         selN.innerHTML = '<option value="$$none$$">부서를 먼저 선택</option>'; selN.disabled = true;
       }
-      btn.disabled = true; inputEmail.value = ''; inputEmail.disabled = true;
+      btn.disabled = true;
     };
     selD.onchange = function () {
       if (selD.value === '$$none$$') {
@@ -139,49 +99,18 @@
         }).join('');
         selN.disabled = false;
       }
-      btn.disabled = true; inputEmail.value = ''; inputEmail.disabled = true;
+      btn.disabled = true;
     };
     selN.onchange = function () { 
       var valid = selN.value && selN.value !== '$$none$$';
-      inputEmail.disabled = !valid;
-      if (!valid) { btn.disabled = true; inputEmail.value = ''; }
-      else { btn.disabled = !inputEmail.value.trim(); }
-    };
-    inputEmail.oninput = function () {
-      btn.disabled = !inputEmail.value.trim() || !selN.value || selN.value === '$$none$$';
+      btn.disabled = !valid;
     };
     btn.onclick = function () {
       var m = state.members.filter(function (x) { return x.id === selN.value; })[0];
-      var email = inputEmail.value.trim();
-      if (!m || !email) return;
-      if (!window.firebase || !firebase.auth) {
-        UI.toast('Firebase 인증 모듈이 로드되지 않았습니다.', true);
-        return;
-      }
-      var actionCodeSettings = {
-        url: window.location.origin + window.location.pathname,
-        handleCodeInApp: true
-      };
-      btn.disabled = true;
-      btn.textContent = '발송 중...';
-      document.getElementById('authMsg').innerHTML = '';
-
-      firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
-        .then(function() {
-          window.localStorage.setItem('emailForSignIn', email);
-          window.localStorage.setItem('pendingMe', JSON.stringify({
-            id: m.id, name: m.name, bureau: m.bureau, dept: m.dept, rank: m.rank
-          }));
-          document.getElementById('authMsg').innerHTML = '<strong>' + esc(email) + '</strong>(으)로 인증 메일이 발송되었습니다.<br>이메일함을 확인하고 링크를 클릭해주세요.';
-          btn.textContent = '인증 메일 재발송';
-          btn.disabled = false;
-        })
-        .catch(function(error) {
-          console.error(error);
-          UI.toast('인증 메일 발송에 실패했습니다: ' + error.message, true);
-          btn.textContent = '인증 메일 발송';
-          btn.disabled = false;
-        });
+      if (!m) return;
+      state.me = { id: m.id, name: m.name, bureau: m.bureau, dept: m.dept, rank: m.rank };
+      UI.Me.set(state.me);
+      render();
     };
   }
 
